@@ -63,6 +63,8 @@ void DlgSettingsImp::saveSettings()
     hGrp->SetASCII("ImportExportDelimiter", delimiter.toStdString().c_str());
     ui->quoteCharLineEdit->onSave();
     ui->escapeCharLineEdit->onSave();
+    ui->formatString->onSave();
+    ui->checkBoxShowAlias->onSave();
 }
 
 void DlgSettingsImp::loadSettings()
@@ -93,6 +95,8 @@ void DlgSettingsImp::loadSettings()
 
     ui->quoteCharLineEdit->onRestore();
     ui->escapeCharLineEdit->onRestore();
+    ui->formatString->onRestore();
+    ui->checkBoxShowAlias->onRestore();
 }
 
 /**

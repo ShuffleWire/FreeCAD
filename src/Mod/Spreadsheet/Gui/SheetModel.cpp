@@ -79,6 +79,22 @@ int SheetModel::columnCount(const QModelIndex &parent) const
 }
 
 
+QVariant format_cell_display(QString value, const Cell * cell)
+{
+    std::string alias;
+    Base::Reference<ParameterGrp> hGrpSpreadsheet = 
+        App::GetApplication().GetUserParameter().GetGroup("BaseApp")->GetGroup("Preferences")->GetGroup("Mod/Spreadsheet");
+    if (cell->getAlias(alias) && hGrpSpreadsheet->GetBool("showAliasName", false)) {
+        QString formatStr = QString::fromStdString(hGrpSpreadsheet->GetASCII("DisplayAliasFormatString", "%V = %A"));
+        if (formatStr.contains(QLatin1String("%V")) || formatStr.contains(QLatin1String("%A"))) {
+            formatStr.replace(QLatin1String("%A"), QString::fromStdString(alias));
+            formatStr.replace(QLatin1String("%V"), value);
+            return QVariant(formatStr);
+        }
+    }
+    return QVariant(value);
+}
+
 QVariant SheetModel::data(const QModelIndex &index, int role) const
 {
     static const Cell * emptyCell = new Cell(CellAddress(0, 0), nullptr);
@@ -255,8 +271,10 @@ QVariant SheetModel::data(const QModelIndex &index, int role) const
             else
                 return QVariant(QColor(textFgColor));
         }
-        case Qt::DisplayRole:
-            return QVariant(QString::fromUtf8(stringProp->getValue()));
+        case Qt::DisplayRole:{
+            QString v = QString::fromUtf8(stringProp->getValue());
+            return format_cell_display(v, cell);
+        }
         case Qt::TextAlignmentRole: {
             if (alignment & Cell::ALIGNMENT_HIMPLIED) {
                 qtAlignment &= ~(Qt::AlignLeft | Qt::AlignHCenter | Qt::AlignRight);
@@ -323,8 +341,7 @@ QVariant SheetModel::data(const QModelIndex &index, int role) const
                 Base::Quantity value = floatProp->getQuantityValue();
                 v = value.getUserString();
             }
-
-            return QVariant(v);
+            return format_cell_display(v, cell);
         }
         default:
             return QVariant();
@@ -384,7 +401,7 @@ QVariant SheetModel::data(const QModelIndex &index, int role) const
                 //v = QString::number(d);
             } else 
                 v = QString::number(l);
-            return QVariant(v);
+            return format_cell_display(v, cell);
         }
         default:
             return QVariant();
@@ -428,7 +445,8 @@ QVariant SheetModel::data(const QModelIndex &index, int role) const
             } catch (...) {
                 value = "#ERR: unknown exception";
             }
-            return QVariant(QString::fromUtf8(value.c_str()));
+            QString v = QString::fromUtf8(value.c_str());
+            return format_cell_display(v, cell);
         }
         default:
             return QVariant();
