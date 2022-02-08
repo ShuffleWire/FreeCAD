@@ -914,6 +914,58 @@ bool CmdCreateSpreadsheet::isActive()
     return App::GetApplication().getActiveDocument();
 }
 
+//======================================================================
+// Std_SelBoundingBox
+//===========================================================================
+#include "../../../Gui/Action.h"
+DEF_STD_CMD_AC(CmdSpreadsheetToggleAlias)
+
+CmdSpreadsheetToggleAlias::CmdSpreadsheetToggleAlias()
+  :Command("Spreadsheet_ToggleAlias")
+{
+    sAppModule      = "Spreadsheet";
+    sGroup          = QT_TR_NOOP("Spreadsheet");
+    sMenuText       = QT_TR_NOOP("Toggle Alias");
+    sToolTipText    = QT_TR_NOOP("Toggle Alias on/off");
+    sWhatsThis      = "Spreadsheet_ToggleAlias";
+    sStatusTip      = sToolTipText;
+    sPixmap         = "SpreadsheetToggleAlias";
+}
+
+void CmdSpreadsheetToggleAlias::activated(int iMsg)
+{
+    bool checked = !!iMsg;
+    printf("Toggle %d\n", checked);
+    Base::Reference<ParameterGrp> hGrpSpreadsheet =
+        App::GetApplication().GetUserParameter().GetGroup("BaseApp")->GetGroup("Preferences")->GetGroup("Mod/Spreadsheet");
+    hGrpSpreadsheet->SetBool("showAliasName", checked);
+    //if (cell->getAlias(alias) && hGrpSpreadsheet->GetBool("showAliasName", false))
+
+    /*if(checked != ViewParams::instance()->getShowSelectionBoundingBox()) {
+        ViewParams::instance()->setShowSelectionBoundingBox(checked);
+        if(_pcAction)
+            _pcAction->setChecked(checked,true);
+    }*/
+}
+
+bool CmdSpreadsheetToggleAlias::isActive(void)
+{
+    printf("isActive\n");
+    /*if(_pcAction) {
+        bool checked = _pcAction->isChecked();
+        if(checked != ViewParams::instance()->getShowSelectionBoundingBox())
+            _pcAction->setChecked(!checked,true);
+    }*/
+    return true;
+}
+
+Gui::Action * CmdSpreadsheetToggleAlias::createAction(void)
+{
+    Gui::Action *pcAction = Command::createAction();
+    pcAction->setCheckable(true);
+    return pcAction;
+}
+
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 void CreateSpreadsheetCommands(void)
@@ -941,4 +993,6 @@ void CreateSpreadsheetCommands(void)
     rcCmdMgr.addCommand(new CmdSpreadsheetStyleUnderline());
 
     rcCmdMgr.addCommand(new CmdSpreadsheetSetAlias());
+
+    rcCmdMgr.addCommand(new CmdSpreadsheetToggleAlias());
 }
