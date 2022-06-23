@@ -92,14 +92,8 @@ bool Matrix4D::isUnity() const
 {
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
-            if (i == j) {
-                if (dMtrx4D[i][j] != 1.0)
-                    return false;
-            }
-            else {
-                if (dMtrx4D[i][j] != 0.0)
-                    return false;
-            }
+            if (dMtrx4D[i][j] != ((i == j)?1.0:0.0) )
+                return false;
         }
     }
 
@@ -123,6 +117,23 @@ bool Matrix4D::isNull() const
         }
     }
 
+    return true;
+}
+
+bool Matrix4D::isOrthogonal(double eps) const
+{
+    Base::Matrix4D trp = *this;
+    trp.transpose();
+    trp *= *this;
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            if (i != j) {
+                if (fabs(trp[i][j]) > eps) {
+                	return false;
+                }
+            }
+        }
+    }
     return true;
 }
 
@@ -186,10 +197,9 @@ void Matrix4D::scale (const Vector3d& rclVct)
 void Matrix4D::rotX (double fAngle)
 {
     Matrix4D clMat;
-    double fsin, fcos;
 
-    fsin = sin (fAngle);
-    fcos = cos (fAngle);
+    double fsin = sin (fAngle);
+    double fcos = cos (fAngle);
     clMat.dMtrx4D[1][1] =  fcos;  clMat.dMtrx4D[2][2] = fcos;
     clMat.dMtrx4D[1][2] = -fsin;  clMat.dMtrx4D[2][1] = fsin;
 
@@ -199,10 +209,9 @@ void Matrix4D::rotX (double fAngle)
 void Matrix4D::rotY (double fAngle)
 {
     Matrix4D clMat;
-    double fsin, fcos;
 
-    fsin = sin (fAngle);
-    fcos = cos (fAngle);
+    double fsin = sin (fAngle);
+    double fcos = cos (fAngle);
     clMat.dMtrx4D[0][0] =  fcos;  clMat.dMtrx4D[2][2] = fcos;
     clMat.dMtrx4D[2][0] = -fsin;  clMat.dMtrx4D[0][2] = fsin;
 
@@ -212,10 +221,9 @@ void Matrix4D::rotY (double fAngle)
 void Matrix4D::rotZ (double fAngle)
 {
     Matrix4D clMat;
-    double fsin, fcos;
 
-    fsin = sin (fAngle);
-    fcos = cos (fAngle);
+    double fsin = sin (fAngle);
+    double fcos = cos (fAngle);
     clMat.dMtrx4D[0][0] =  fcos;  clMat.dMtrx4D[1][1] = fcos;
     clMat.dMtrx4D[0][1] = -fsin;  clMat.dMtrx4D[1][0] = fsin;
 
@@ -225,54 +233,26 @@ void Matrix4D::rotZ (double fAngle)
 void Matrix4D::rotLine(const Vector3d& rclVct, double fAngle)
 {
     // **** algorithm was taken from a math book
-    Matrix4D  clMA, clMB, clMC, clMRot;
+    Matrix4D  clMRot;
+    clMRot.nullify();
     Vector3d  clRotAxis(rclVct);
-    short iz, is;
-    double fcos, fsin;
-
-    // set all entries to "0"
-    for (iz = 0; iz < 4; iz++) {
-        for (is = 0; is < 4; is++)  {
-            clMA.dMtrx4D[iz][is] = 0;
-            clMB.dMtrx4D[iz][is] = 0;
-            clMC.dMtrx4D[iz][is] = 0;
-        }
-    }
 
     // ** normalize the rotation axis
     clRotAxis.Normalize();
 
     // ** set the rotation matrix (formula taken from a math book) */
-    fcos = cos(fAngle);
-    fsin = sin(fAngle);
+    double fcos = cos(fAngle);
+    double fsin = sin(fAngle);
 
-    clMA.dMtrx4D[0][0] = (1-fcos) * clRotAxis.x * clRotAxis.x;
-    clMA.dMtrx4D[0][1] = (1-fcos) * clRotAxis.x * clRotAxis.y;
-    clMA.dMtrx4D[0][2] = (1-fcos) * clRotAxis.x * clRotAxis.z;
-    clMA.dMtrx4D[1][0] = (1-fcos) * clRotAxis.x * clRotAxis.y;
-    clMA.dMtrx4D[1][1] = (1-fcos) * clRotAxis.y * clRotAxis.y;
-    clMA.dMtrx4D[1][2] = (1-fcos) * clRotAxis.y * clRotAxis.z;
-    clMA.dMtrx4D[2][0] = (1-fcos) * clRotAxis.x * clRotAxis.z;
-    clMA.dMtrx4D[2][1] = (1-fcos) * clRotAxis.y * clRotAxis.z;
-    clMA.dMtrx4D[2][2] = (1-fcos) * clRotAxis.z * clRotAxis.z;
-
-    clMB.dMtrx4D[0][0] = fcos;
-    clMB.dMtrx4D[1][1] = fcos;
-    clMB.dMtrx4D[2][2] = fcos;
-
-    clMC.dMtrx4D[0][1] = -fsin * clRotAxis.z;
-    clMC.dMtrx4D[0][2] =  fsin * clRotAxis.y;
-    clMC.dMtrx4D[1][0] =  fsin * clRotAxis.z;
-    clMC.dMtrx4D[1][2] = -fsin * clRotAxis.x;
-    clMC.dMtrx4D[2][0] = -fsin * clRotAxis.y;
-    clMC.dMtrx4D[2][1] =  fsin * clRotAxis.x;
-
-    for (iz = 0; iz < 3; iz++) {
-        for (is = 0; is < 3; is++)
-            clMRot.dMtrx4D[iz][is] = clMA.dMtrx4D[iz][is] +
-                                     clMB.dMtrx4D[iz][is] +
-                                     clMC.dMtrx4D[iz][is];
-    }
+    clMRot.dMtrx4D[0][0] = (1-fcos) * clRotAxis.x * clRotAxis.x  +  fcos;
+    clMRot.dMtrx4D[0][1] = (1-fcos) * clRotAxis.x * clRotAxis.y  + -fsin * clRotAxis.z;
+    clMRot.dMtrx4D[0][2] = (1-fcos) * clRotAxis.x * clRotAxis.z  +  fsin * clRotAxis.y;
+    clMRot.dMtrx4D[1][0] = (1-fcos) * clRotAxis.x * clRotAxis.y  +  fsin * clRotAxis.z;
+    clMRot.dMtrx4D[1][1] = (1-fcos) * clRotAxis.y * clRotAxis.y  +  fcos;
+    clMRot.dMtrx4D[1][2] = (1-fcos) * clRotAxis.y * clRotAxis.z  + -fsin * clRotAxis.x;
+    clMRot.dMtrx4D[2][0] = (1-fcos) * clRotAxis.x * clRotAxis.z  + -fsin * clRotAxis.y;
+    clMRot.dMtrx4D[2][1] = (1-fcos) * clRotAxis.y * clRotAxis.z  +  fsin * clRotAxis.x;
+    clMRot.dMtrx4D[2][2] = (1-fcos) * clRotAxis.z * clRotAxis.z  +  fcos;
 
     (*this) = clMRot * (*this);
 }
@@ -470,20 +450,17 @@ void Matrix4D::transform (const Vector3d& rclVct, const Matrix4D& rclMtrx)
 void Matrix4D::inverse ()
 {
   Matrix4D clInvTrlMat, clInvRotMat;
-  short  iz, is;
 
-  /**** Herausnehmen und Inversion der TranslationsMatrix
-  aus der TransformationMatrix                      ****/
-  for (iz = 0 ;iz < 3; iz++)
-    clInvTrlMat.dMtrx4D[iz][3] = -dMtrx4D[iz][3];
+  // Removal and inversion of the Translations Matrix from the transformation matrix
+  for (int i = 0 ;i < 3; i++)
+    clInvTrlMat.dMtrx4D[i][3] = -dMtrx4D[i][3];
 
-  /**** Herausnehmen und Inversion der RotationsMatrix
-  aus der TransformationMatrix                      ****/
-  for (iz = 0 ;iz < 3; iz++)
-    for (is = 0 ;is < 3; is++)
-      clInvRotMat.dMtrx4D[iz][is] = dMtrx4D[is][iz];
+  // Removal and inversion of the Rotations Matrix from the transformation matrix
+  for (int i = 0 ;i < 3; i++)
+    for (int j = 0 ;j < 3; j++)
+      clInvRotMat.dMtrx4D[i][j] = dMtrx4D[j][i];
 
-  /**** inv(M) = inv(Mtrl * Mrot) = inv(Mrot) * inv(Mtrl) ****/
+  // inv(M) = inv(Mtrl * Mrot) = inv(Mrot) * inv(Mtrl) 
   (*this) = clInvRotMat * clInvTrlMat;
 }
 
@@ -585,38 +562,30 @@ void Matrix4D::inverseGauss ()
 
 void Matrix4D::getMatrix  (double dMtrx[16]) const
 {
-  short iz, is;
-
-  for (iz = 0; iz < 4; iz++)
-    for (is = 0; is < 4; is++)
-      dMtrx[ 4*iz + is ] = dMtrx4D[iz][is];
+  for (int i = 0; i < 4; i++)
+    for (int j = 0; j < 4; j++)
+      dMtrx[ 4*i + j ] = dMtrx4D[i][j];
 }
 
 void Matrix4D::setMatrix  (const double dMtrx[16])
 {
-  short iz, is;
-
-  for (iz = 0; iz < 4; iz++)
-    for (is = 0; is < 4; is++)
-      dMtrx4D[iz][is] = dMtrx[ 4*iz + is ];
+  for (int i = 0; i < 4; i++)
+    for (int j = 0; j < 4; j++)
+      dMtrx4D[i][j] = dMtrx[ 4*i + j ];
 }
 
 void Matrix4D::getGLMatrix (double dMtrx[16]) const
 {
-  short iz, is;
-
-  for (iz = 0; iz < 4; iz++)
-    for (is = 0; is < 4; is++)
-      dMtrx[ iz + 4*is ] = dMtrx4D[iz][is];
+  for (int i = 0; i < 4; i++)
+    for (int j = 0; j < 4; j++)
+      dMtrx[ i + 4*j ] = dMtrx4D[i][j];
 }
 
 void Matrix4D::setGLMatrix (const double dMtrx[16])
 {
-  short iz, is;
-
-  for (iz = 0; iz < 4; iz++)
-    for (is = 0; is < 4; is++)
-      dMtrx4D[iz][is] = dMtrx[ iz + 4*is ];
+  for (int i = 0; i < 4; i++)
+    for (int j = 0; j < 4; j++)
+      dMtrx4D[i][j] = dMtrx[ i + 4*j ];
 }
 
 unsigned long Matrix4D::getMemSpace ()
@@ -626,22 +595,21 @@ unsigned long Matrix4D::getMemSpace ()
 
 void Matrix4D::Print () const
 {
-    short i;
-    for (i = 0; i < 4; i++)
+    for (int i = 0; i < 4; i++)
         printf("%9.3f %9.3f %9.3f %9.3f\n", dMtrx4D[i][0], dMtrx4D[i][1], dMtrx4D[i][2], dMtrx4D[i][3]);
 }
 
 void Matrix4D::transpose ()
 {
-  double  dNew[4][4];
-
   for (int i = 0; i < 4; i++)
   {
-    for (int j = 0; j < 4; j++)
-      dNew[j][i] = dMtrx4D[i][j];
+    for (int j = i+1; j < 4; j++)
+      {
+      	double tmp = dMtrx4D[j][i];
+      	dMtrx4D[j][i] = dMtrx4D[i][j];
+      	dMtrx4D[i][j] = tmp;
+      }
   }
-
-  memcpy(dMtrx4D, dNew, sizeof(dMtrx4D));
 }
 
 
@@ -651,11 +619,8 @@ std::string Matrix4D::toString() const
 {
   std::stringstream str;
   for (int i = 0; i < 4; i++)
-  {
     for (int j = 0; j < 4; j++)
       str << dMtrx4D[i][j] << " ";
-  }
-
   return str.str();
 }
 
@@ -666,105 +631,81 @@ void Matrix4D::fromString(const std::string &str)
   input.str(str);
 
   for (int i = 0; i < 4; i++)
-  {
     for (int j = 0; j < 4; j++)
       input >> dMtrx4D[i][j];
-  }
 }
 
 // Analyse the a transformation Matrix and describe the transformation
 std::string Matrix4D::analyse() const
 {
     const double eps=1.0e-06;
-    bool hastranslation = (dMtrx4D[0][3] != 0.0 ||
-            dMtrx4D[1][3] != 0.0 || dMtrx4D[2][3] != 0.0);
-    const Base::Matrix4D unityMatrix = Base::Matrix4D();
-    std::string text;
-    if (*this == unityMatrix)
+    std::stringstream text;
+    if (isUnity())
     {
-        text = "Unity Matrix";
+        text << "Unity Matrix";
     }
     else
-    {
+    {            
         if (dMtrx4D[3][0] != 0.0 || dMtrx4D[3][1] != 0.0 ||
             dMtrx4D[3][2] != 0.0 || dMtrx4D[3][3] != 1.0)
         {
-            text = "Projection";
+            text << "Projection";
         }
         else //translation and affine
         {
-            if (dMtrx4D[0][1] == 0.0 &&  dMtrx4D[0][2] == 0.0 &&
-                dMtrx4D[1][0] == 0.0 &&  dMtrx4D[1][2] == 0.0 &&
-                dMtrx4D[2][0] == 0.0 &&  dMtrx4D[2][1] == 0.0) //scaling
+            if (dMtrx4D[0][1] == 0.0 && dMtrx4D[0][2] == 0.0 &&
+                dMtrx4D[1][0] == 0.0 && dMtrx4D[1][2] == 0.0 &&
+                dMtrx4D[2][0] == 0.0 && dMtrx4D[2][1] == 0.0) //scaling
             {
-                std::ostringstream stringStream;
-                stringStream << "Scale [" << dMtrx4D[0][0] << ", "  <<
+                text << "Scale [" << dMtrx4D[0][0] << ", "  <<
                     dMtrx4D[1][1] << ", " << dMtrx4D[2][2] << "]";
-                text = stringStream.str();
             }
             else
             {
-                Base::Matrix4D sub;
-                sub[0][0] = dMtrx4D[0][0]; sub[0][1] = dMtrx4D[0][1];
-                sub[0][2] = dMtrx4D[0][2]; sub[1][0] = dMtrx4D[1][0];
-                sub[1][1] = dMtrx4D[1][1]; sub[1][2] = dMtrx4D[1][2];
-                sub[2][0] = dMtrx4D[2][0]; sub[2][1] = dMtrx4D[2][1];
-                sub[2][2] = dMtrx4D[2][2];
-
-                Base::Matrix4D trp = sub;
-                trp.transpose();
-                trp = trp * sub;
-                bool ortho = true;
-                for (unsigned short i=0; i<4 && ortho; i++) {
-                    for (unsigned short j=0; j<4 && ortho; j++) {
-                        if (i != j) {
-                            if (fabs(trp[i][j]) > eps) {
-                                ortho = false;
-                                break;
-                            }
-                        }
-                    }
-                }
+                Base::Matrix4D sub(dMtrx4D[0][0], dMtrx4D[0][1], dMtrx4D[0][2], 0,
+                				   dMtrx4D[1][0], dMtrx4D[1][1], dMtrx4D[1][2], 0,
+                				   dMtrx4D[2][0], dMtrx4D[2][1], dMtrx4D[2][2], 0,
+                				   0, 0, 0, 0);
 
                 double determinant = sub.determinant();
-                if (ortho)
+                if (sub.isOrthogonal(eps))
                 {
-                    if (fabs(determinant-1.0)<eps ) //rotation
+                    if (fabs(determinant-1.0)<eps) //rotation
                     {
-                        text = "Rotation Matrix";
+                        text << "Rotation Matrix";
                     }
                     else
                     {
-                        if (fabs(determinant+1.0)<eps ) //rotation
+                        if (fabs(determinant+1.0)<eps) //rotation
                         {
-                            text = "Rotinversion Matrix";
+                            text << "Rotinversion Matrix";
                         }
                         else //scaling with rotation
                         {
-                            std::ostringstream stringStream;
-                            stringStream << "Scale and Rotate ";
-                            if (determinant<0.0 )
-                                stringStream << "and Invert ";
-                            stringStream << "[ " <<
-            sqrt(trp[0][0]) << ", "  << sqrt(trp[1][1]) << ", " <<
-            sqrt(trp[2][2]) << "]";
-                                text = stringStream.str();
+                            text << "Scale and Rotate ";
+                            if (determinant<0.0)
+                                text << "and Invert ";
+                            // Previously, we use the "trp" matrix instead of "sub", and actually it's the trp*sub matrix
+                            // so only the diagonal term of it ? I don't know what it mean, actually...
+                            text << "[ " << sqrt(sub[0][0]) << ", " << 
+            								sqrt(sub[1][1]) << ", " <<
+        									sqrt(sub[2][2]) << "]";
                         }
                     }
                 }
                 else
                 {
-                    std::ostringstream stringStream;
-                    stringStream << "Affine with det= " <<
-                        determinant;
-                    text = stringStream.str();
+                    text << "Affine with det= " << determinant;
                 }
             }
         }
+        
+		bool hastranslation = (dMtrx4D[0][3] != 0.0 ||
+            dMtrx4D[1][3] != 0.0 || dMtrx4D[2][3] != 0.0);
         if (hastranslation)
-            text += " with Translation";
+            text << " with Translation";
     }
-    return text;
+    return text.str();
 }
 
 Matrix4D& Matrix4D::Outer(const Vector3f& rV1, const Vector3f& rV2)

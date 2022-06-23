@@ -148,6 +148,8 @@ public:
   void nullify();
   /// Checks if this is the null matrix
   bool isNull() const;
+  /// Checks if this matrix is orthogonal
+  bool isOrthogonal(double eps) const;
   /// moves the coordinatesystem for the x,y,z value
   void move         (float x, float y, float z)
   { move(Vector3f(x,y,z)); }
@@ -212,15 +214,8 @@ private:
 
 inline Matrix4D Matrix4D::operator  +  (const Matrix4D& rclMtrx) const
 {
-  Matrix4D  clMat;
-  unsigned short iz, is;
-
-  for (iz = 0; iz < 4; iz++) {
-    for (is = 0; is < 4; is++) {
-      clMat.dMtrx4D[iz][is] = dMtrx4D[iz][is] + rclMtrx[iz][is];
-    }
-  }
-
+  Matrix4D  clMat(*this);
+  clMat += rclMtrx;
   return clMat;
 }
 
@@ -239,15 +234,8 @@ inline Matrix4D& Matrix4D::operator += (const Matrix4D& rclMtrx)
 
 inline Matrix4D Matrix4D::operator  -  (const Matrix4D& rclMtrx) const
 {
-  Matrix4D  clMat;
-  unsigned short  iz, is;
-
-  for (iz = 0; iz < 4; iz++) {
-    for (is = 0; is < 4; is++) {
-      clMat.dMtrx4D[iz][is] = dMtrx4D[iz][is] - rclMtrx[iz][is];
-    }
-  }
-
+  Matrix4D  clMat(*this);
+  clMat -= rclMtrx;
   return clMat;
 }
 
@@ -338,41 +326,18 @@ inline Vector3d Matrix4D::operator* (const Vector3d& rclVct) const
 
 inline void Matrix4D::multVec(const Vector3d & src, Vector3d & dst) const
 {
-  double x = (dMtrx4D[0][0]*src.x + dMtrx4D[0][1]*src.y +
-              dMtrx4D[0][2]*src.z + dMtrx4D[0][3]);
-  double y = (dMtrx4D[1][0]*src.x + dMtrx4D[1][1]*src.y +
-              dMtrx4D[1][2]*src.z + dMtrx4D[1][3]);
-  double z = (dMtrx4D[2][0]*src.x + dMtrx4D[2][1]*src.y +
-              dMtrx4D[2][2]*src.z + dMtrx4D[2][3]);
-  dst.Set(x,y,z);
+  dst = (*this) * src;
 }
 
 inline void Matrix4D::multVec(const Vector3f & src, Vector3f & dst) const
 {
-  double sx = static_cast<double>(src.x);
-  double sy = static_cast<double>(src.y);
-  double sz = static_cast<double>(src.z);
-
-  double x = (dMtrx4D[0][0]*sx + dMtrx4D[0][1]*sy +
-              dMtrx4D[0][2]*sz + dMtrx4D[0][3]);
-  double y = (dMtrx4D[1][0]*sx + dMtrx4D[1][1]*sy +
-              dMtrx4D[1][2]*sz + dMtrx4D[1][3]);
-  double z = (dMtrx4D[2][0]*sx + dMtrx4D[2][1]*sy +
-              dMtrx4D[2][2]*sz + dMtrx4D[2][3]);
-  dst.Set(static_cast<float>(x),
-          static_cast<float>(y),
-          static_cast<float>(z));
+  dst = (*this) * src;
 }
 
 inline Matrix4D  Matrix4D::operator *  (double scalar) const
 {
-    Matrix4D  matrix;
-    for (unsigned short i = 0; i < 4; i++) {
-        for (unsigned short j = 0; j < 4; j++) {
-            matrix.dMtrx4D[i][j] = dMtrx4D[i][j] * scalar;
-        }
-    }
-
+    Matrix4D  matrix(*this);
+    matrix *= scalar;
     return matrix;
 }
 
